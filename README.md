@@ -19,7 +19,7 @@ import (
 func main() {
 	file, _ := os.Open("filename")
 	t, _ := detector.Detect(file)
-	fmt.Printf("file type is %s", t)
+	fmt.Printf("file type is %s", t.Description)
 }
 
 ```

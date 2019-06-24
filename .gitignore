@@ -12,4 +12,5 @@
 *.out
 
 .idea
+.DS_Store
 sigo

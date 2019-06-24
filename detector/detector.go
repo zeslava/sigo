@@ -21,56 +21,46 @@ func init() {
 }
 
 // Detect detect input content type
-func Detect(r io.Reader) (string, error) {
-	var in []byte
-	var has, match bool
-	var v interface{}
+func Detect(r io.Reader) (*Sig, error) {
+	iter := tree.Root().Iterator()
+	var prev interface{}
 	for {
 		b := make([]byte, 1)
 		_, err := r.Read(b)
 		if err != nil {
 			if err == io.EOF {
-				return "", fmt.Errorf("can't detect type")
+				if prev != nil {
+					return prev.(*Sig), nil
+				}
+				return nil, fmt.Errorf("can't detect type")
 			}
-			return "", err
+			return nil, err
 		}
 
-		in = append(in, b[0])
-		_, has = tree.Get(in)
-		if has {
-			match = true
+		iter.SeekPrefix(b[:1])
+		k, v, ok := iter.Next()
+
+		if ok {
+			prev = v
 			continue
 		}
-		if match {
-			if len(in) > 1 {
-				v, has = tree.Get(in[:len(in)-1])
-				break
-			} else if len(in) == 1 {
-				v, has = tree.Get(in)
-				if has {
-					s := v.(sig)
-					return s.Description, nil
-				} else {
-					return "", fmt.Errorf("undefined type: %v\n", hex.EncodeToString(in))
-				}
-			}
-		}
-	}
 
-	if has {
-		return v.(sig).Description, nil
+		if prev != nil {
+			return prev.(*Sig), nil
+		}
+
+		return nil, fmt.Errorf("undefined type: %v\n", hex.EncodeToString(k))
 	}
-	return "", fmt.Errorf("undefined type: %v\n", hex.EncodeToString(in))
 }
 
-type sig struct {
+type Sig struct {
 	Description string
 	Extension   string
 	Offset      int
 	Signature   []byte
 }
 
-var sigs = []sig{
+var sigs = []*Sig{
 	{
 		Description: "3GPP multimedia files",
 		Extension:   "3GP",

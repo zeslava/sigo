@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("undefined type: %v\n", err)
 	} else {
-		fmt.Printf("type: %s\n", t)
+		fmt.Printf("type: %s\n", t.Description)
 	}
 }
 
