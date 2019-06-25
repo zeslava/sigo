@@ -24,5 +24,8 @@ func main() {
 
 ```
 
-#### !WARNING!
+#### Resources
+Most information is took from here: https://www.garykessler.net/library/file_sigs.html
+
+##### !WARNING!
 Project under development at an earlier stage
