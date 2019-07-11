@@ -1,55 +1,52 @@
 package detector
 
 import (
-	"encoding/hex"
 	"fmt"
 	"io"
-
-	iradix "github.com/hashicorp/go-immutable-radix"
 )
 
-var tree *iradix.Tree
+var tree *trie
 
 func init() {
 	// Create a tree
-	tree = iradix.New()
+	tree = &trie{
+		root: &node{},
+	}
 
 	// fill tree
 	for _, s := range sigs {
-		tree, _, _ = tree.Insert(s.Signature, s)
+		tree.insert(s.Signature, s)
 	}
 }
 
 // Detect detect input content type
 func Detect(r io.Reader) (*Sig, error) {
-	iter := tree.Root().Iterator()
-	var prev interface{}
+	prev := tree.root
+	var n *node
 	for {
 		b := make([]byte, 1)
 		_, err := r.Read(b)
 		if err != nil {
 			if err == io.EOF {
 				if prev != nil {
-					return prev.(*Sig), nil
+					return prev.value.(*Sig), nil
 				}
 				return nil, fmt.Errorf("can't detect type")
 			}
 			return nil, err
 		}
 
-		iter.SeekPrefix(b[:1])
-		k, v, ok := iter.Next()
-
-		if ok {
-			prev = v
+		n = prev.getChild(b[0])
+		if n != nil {
+			prev = n
 			continue
 		}
 
 		if prev != nil {
-			return prev.(*Sig), nil
+			return prev.value.(*Sig), nil
 		}
 
-		return nil, fmt.Errorf("undefined type: %v\n", hex.EncodeToString(k))
+		return nil, fmt.Errorf("undefined type: %v\n", prev.value)
 	}
 }
 
@@ -60,7 +57,7 @@ type Sig struct {
 	Signature   []byte
 }
 
-var sigs = []*Sig{
+var sigs = [541]*Sig{
 	{
 		Description: "3GPP multimedia files",
 		Extension:   "3GP",
