@@ -3,50 +3,51 @@ package detector
 import (
 	"fmt"
 	"io"
+
+	"github.com/slavablind91/triego"
 )
 
-var tree *trie
+var tree triego.Trie
 
 func init() {
 	// Create a tree
-	tree = &trie{
-		root: &node{},
-	}
+	tree = triego.New()
 
 	// fill tree
 	for _, s := range sigs {
-		tree.insert(s.Signature, s)
+		tree.Insert(s.Signature, s)
 	}
 }
 
 // Detect detect input content type
 func Detect(r io.Reader) (*Sig, error) {
-	prev := tree.root
-	var n *node
+	prev := tree
+	var t triego.Trie
+	var ok bool
+	b := make([]byte, 1)
 	for {
-		b := make([]byte, 1)
 		_, err := r.Read(b)
 		if err != nil {
 			if err == io.EOF {
 				if prev != nil {
-					return prev.value.(*Sig), nil
+					return prev.Value().(*Sig), nil
 				}
 				return nil, fmt.Errorf("can't detect type")
 			}
 			return nil, err
 		}
 
-		n = prev.getChild(b[0])
-		if n != nil {
-			prev = n
+		t, ok = prev.Sub(b[0])
+		if ok {
+			prev = t
 			continue
 		}
 
 		if prev != nil {
-			return prev.value.(*Sig), nil
+			return prev.Value().(*Sig), nil
 		}
 
-		return nil, fmt.Errorf("undefined type: %v\n", prev.value)
+		return nil, fmt.Errorf("undefined type: %v\n", prev.Value())
 	}
 }
 
