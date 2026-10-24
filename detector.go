@@ -2,18 +2,15 @@ package sigo
 
 import (
 	"errors"
-	"fmt"
 	"io"
 
 	"github.com/zeslava/triego"
 )
 
-var tree triego.Trie[*Signature]
+// tree is a concrete type, not triego.Trie, so its Cursor steps are inlined
+var tree = triego.New[*Signature]()
 
 func init() {
-	// Create a tree
-	tree = triego.NewFat[*Signature]()
-
 	// fill tree
 	for _, s := range sigs {
 		tree.Insert(s.Signature, s)
@@ -22,7 +19,7 @@ func init() {
 
 // Detect detect input content type
 func Detect(r io.Reader) (*Signature, error) {
-	prev := tree
+	c := tree.Cursor()
 	var lastValue *Signature
 	var more bool
 	var b [200]byte
@@ -42,7 +39,7 @@ func Detect(r io.Reader) (*Signature, error) {
 			continue
 		}
 
-		prev, lastValue, more = iterate(b[:n], prev, lastValue)
+		lastValue, more = iterate(b[:n], &c, lastValue)
 		if more {
 			continue
 		}
@@ -56,44 +53,17 @@ func Detect(r io.Reader) (*Signature, error) {
 	return nil, errors.New("no value")
 }
 
-func iterate(b []byte, prev triego.Trie[*Signature], lastValue *Signature) (triego.Trie[*Signature], *Signature, bool) {
-	//for _, byt := range b {
-	//	fmt.Printf("%#v %s\n", byt, string(byt))
-	//}
-	//fmt.Println()
-	//for _, byt := range b {
-	//	fmt.Printf("%s\t", string(byt))
-	//}
-	fmt.Println()
-
-	fmt.Printf("b: %#v\n", b)
-	fmt.Printf("b: %s\n", b)
-	var t triego.Trie[*Signature]
-	var ok bool
+func iterate(b []byte, c *triego.Cursor[*Signature], lastValue *Signature) (*Signature, bool) {
 	for _, k := range b {
-		t, ok = prev.Sub(k)
-		if ok {
-			prev = t
-			val, _ := getValue(t)
-			if val != nil {
-				lastValue = val
-			}
-			continue
+		if !c.Step(k) {
+			// here is no child - finish with no more
+			return lastValue, false
 		}
-		// here is no child - finish with no more
-		return prev, lastValue, false
+		if val := c.Value(); val != nil {
+			lastValue = val
+		}
 	}
 
 	// still have child - try to get more
-	return prev, lastValue, true
-}
-
-func getValue(t triego.Trie[*Signature]) (*Signature, error) {
-	if t != nil {
-		if sig := t.Value(); sig != nil {
-			return sig, nil
-		}
-		return nil, errors.New("no value")
-	}
-	return nil, errors.New("tree is empty")
+	return lastValue, true
 }
