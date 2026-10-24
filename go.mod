@@ -1,5 +1,6 @@
-module github.com/slavablind91/sigo
+module github.com/zeslava/sigo
 
-go 1.16
+go 1.20
 
-require github.com/slavablind91/triego v0.1.0
+require github.com/zeslava/triego v0.1.0
+

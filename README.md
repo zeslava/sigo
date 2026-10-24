@@ -1,7 +1,7 @@
 # sigo
 Pure Go detector of file type by signatures
 
-**sigo** uses radix-tree for storing files signatures.
+**sigo** uses trie for storing files signatures.
 
 Detect reading from input byte-by-byte and find signature in the tree.
 
@@ -13,12 +13,12 @@ import (
 	"fmt"
 	"os"
 	
-	"github.com/slavablind91/sigo/detector"
+	"github.com/zeslava/sigo"
 )
 
 func main() {
 	file, _ := os.Open("filename")
-	t, _ := detector.Detect(file)
+	t, _ := sigo.Detect(file)
 	fmt.Printf("file type is %s", t.Description)
 }
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/slavablind91/sigo/detector"
+	"github.com/zeslava/sigo"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 	check(err)
 	defer file.Close()
 
-	t, err := detector.Detect(file)
+	t, err := sigo.Detect(file)
 	if err != nil {
 		fmt.Printf("undefined type: %v\n", err)
 	} else {
